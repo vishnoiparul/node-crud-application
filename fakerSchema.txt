@@ -1,0 +1,80 @@
+Employee ::
+
+{
+  "type": "array",
+  "minItems": 200,
+  "maxItems": 200,
+  "items": {
+    "type": "object",
+    "properties": {
+      "name": {
+        "type": "string",
+        "faker": "name.findName"
+      },
+      "jobTitle": {
+        "type": "string",
+        "minItems": 1,
+        "maxItems": 1,
+        "enum": [
+          "Associate Software Developer",
+          "Software Developer",
+          "Senior Software Developer",
+          "Lead Software Developer",
+          "Associate Designer",
+          "Designer",
+          "Lead Designer",
+          "Associate Tester",
+          "Tester",
+          "Lead Tester",
+          "Project Manager",
+          "Product Manager"
+        ]
+      },
+      "department": {
+        "type": "string",
+        "minItems": 1,
+        "maxItems": 1,
+        "enum": [
+          "Designer",
+          "Developer",
+          "Tester",
+          "Manager"
+        ]
+      },
+      "location": {
+        "type": "string",
+        "minItems": 1,
+        "maxItems": 1,
+        "enum": [
+          "Hyderabad",
+          "Bangalore",
+          "Delhi",
+          "Mumbai",
+          "Pune"
+        ]
+      },
+      "age": {
+        "type": "integer",
+        "minimum": 20,
+        "maximum": 50,
+        "multipleOf": 1,
+        "exclusiveMinimum": true
+      },
+      "salary": {
+        "type": "integer",
+        "minimum": 300000,
+        "maximum": 5000000,
+        "multipleOf": 1000,
+        "exclusiveMinimum": true
+      }
+    },
+    "required": [
+      "name",
+      "jobTitle",
+      "department",
+      "location",
+      "age",
+      "salary"
+    ]
+  }
+}

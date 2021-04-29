@@ -1,0 +1,480 @@
+swagger: "2.0"
+info:
+  version: '1.0.0'
+  title: FAA-API
+  description: 'FAA Project Application API'
+  license: 
+    name: 'MIT'
+    url: 'https://opensource.org/licenses/MIT'
+securityDefinitions:
+  bearerAuth:
+    type: http
+    scheme: bearer
+    bearerFormat: JWT 
+    name: Authorization
+security:
+  - bearerAuth: []
+host: 'localhost:5000'
+basePath: '/api/v1'
+schemes: 
+  - http
+consumes:
+  - application/json
+produces:
+  - application/json
+paths:
+  /auth/register:
+    post:
+      summary: Register user in application and return back authentication token
+      tags: 
+        - Authentication
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: user to create.
+          required: true
+          schema:
+            type: object
+            required:
+              - firstName
+              - lastName
+              - email
+              - password
+            properties:
+              firstName:
+                type: string
+                example: Tony
+              lastName:
+                type: string
+                example: Stark
+              email: 
+                type: string
+                example: tony.stark@example.com
+              password:
+                type: string
+                example: '******'
+      responses: 
+          '201':
+            description: User is created successfully
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "User Register Successfully"
+            headers:
+              authtoken: 
+                type: string
+                description: Token for user authorization. Need to be send with all authorized api call
+                example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoyfSwiZXhwIjoxNjE5NzY2MTA5LCJpYXQiOjE2MTk2Nzk3MDl9.3t2d-2Wocx-BphPOt5uuN4OuM32OX0IqQGNStnhuhreg
+          '400':
+            description: Query parameters are not satisfying expected validations
+            schema:
+              $ref: '#definitions/ValidationError'
+          '409':
+            description: User with provided email already exist in system
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "User already exist. Login to continue"
+                error:
+                  type: object
+                  properties:
+                    status: 
+                      type: integer
+                      example: 409
+                    message: 
+                      type: string
+                      example: "User already exist. Login to continue"
+  /auth/login:
+    post:
+      summary: Login user into the application and return back authentication token
+      tags: 
+        - Authentication
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: user to create.
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+              - password
+            properties:
+              email: 
+                type: string
+                example: tony.stark@example.com
+              password:
+                type: string
+                example: '******'
+      responses: 
+          '200':
+            description: User is logged in successfully
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "User logged-in Successfully"
+                headers:
+                  authtoken: 
+                    type: string
+                    description: Token for user authorization. Need to be send with all authorized api call
+                    example: eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoyfSwiZXhwIjoxNjE5NzY2MTA5LCJpYXQiOjE2MTk2Nzk3MDl9.3t2d-2Wocx-BphPOt5uuN4OuM32OX0IqQGNStnhuhreg
+          '400':
+            description: Wrong credential provided
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Invalid email or password"
+                error:
+                  type: object
+                  properties:
+                    status: 
+                      type: integer
+                      example: 409
+                    message: 
+                      type: string
+                      example: "Invalid email or password"
+          '400':
+            description: Query parameters are not satisfying expected validations
+            schema:
+              $ref: '#definitions/ValidationError'
+  /auth/forgot-password:
+    post:
+      summary: Request for reset password. Trigger mail to provided email with the link for reset password
+      tags: 
+        - Authentication
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: user to create.
+          required: true
+          schema:
+            type: object
+            required:
+              - email
+            properties:
+              email: 
+                type: string
+                example: tony.stark@example.com
+      responses: 
+          '200':
+            description: Link to reset password successfully sent to provided email address
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "Link to reset password is sent to the mail successfully."
+          '400':
+            description: Query parameters are not satisfying expected validations
+            schema:
+              $ref: '#definitions/ValidationError'
+  /auth/verify-link:
+    get:
+      summary: Verifies token sent in mail from the forgot-password request
+      tags: 
+        - Authentication
+      consumes:
+        - application/json
+      headers:
+        Authorization:
+          type: string
+          description: Token received from mail link to be send in form of bearer token
+          example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoxfSwiZXhwIjoxNjE5Njk4ODI0LCJpYXQiOjE2MTk2OTUyMjR9.RbFXVR74Z28ZfN-S3f9L12DMjyxIAOSmz0TE2KWW3Es
+      responses: 
+          '200':
+            description: Token verified successfully. Proceed with the reset password form
+            schema:
+              type: object
+              properties:
+                message:
+                  type: string
+                  example: "Reset password request verified successfully."
+          '401':
+            description: User is not authorized
+            schema:
+              $ref: '#definitions/AuthenticationError'
+  /auth/reset-password:
+    post:
+      summary: Reset password of user account to given password
+      tags: 
+        - Authentication
+      consumes:
+        - application/json
+      headers:
+        Authorization:
+          type: string
+          description: Token received from mail link to be send in form of bearer token
+          example: Bearer eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJkYXRhIjp7ImlkIjoxfSwiZXhwIjoxNjE5Njk4ODI0LCJpYXQiOjE2MTk2OTUyMjR9.RbFXVR74Z28ZfN-S3f9L12DMjyxIAOSmz0TE2KWW3Es
+      parameters:
+        - in: body
+          name: user
+          description: Password to update
+          required: true
+          schema:
+            type: object
+            required:
+              - password
+            properties:
+              password:
+                type: string
+                example: '******'
+      responses: 
+          '200':
+            description: Successfully updated password
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "Successfully updated password"
+          '401':
+            description: User is not authorized
+            schema:
+              $ref: '#definitions/AuthenticationError'
+          '400':
+            description: Query parameters are not satisfying expected validations
+            schema:
+              $ref: '#definitions/ValidationError'
+  
+  employee:
+    get:
+      parameters:
+      - in: query
+        name: searchString
+        description: Search list of employee based on provided string. String will searched on employee name and job title
+        type: string
+        example: james
+      - in: query
+        name: department
+        description: Search list of employee based on given department name
+        type: string
+        example: Developer
+        enum: ['Developer', 'Designer', 'Tester', 'Manager']
+      - in: query
+        name: location
+        description: Search list of employee based on given location
+        type: string
+        example: pune
+        enum: ['Hyderabad', 'Delhi', 'Bangalore', 'Pune', 'Mumbai']
+      - in: query
+        name: age
+        description: Search list of employee based on given age
+        type: integer
+        example: 24
+      - in: query
+        name: page
+        description: Return list of employee for the given page
+        type: integer
+        example: 3
+        default: 1
+      - in: query
+        name: limit
+        description: Limit of employee return in a single response
+        type: integer
+        example: 10
+        default: 10
+      security:
+        - bearerAuth: []
+      summary: Returns the list of employee
+      tags: 
+        - Employee
+      responses: 
+          '200':
+            description: List of employee based on given filters and search
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                employees: 
+                  $ref: '#definitions/EmployeeList'
+                totalResult:
+                  type: integer
+                  description: Total number of employee for given search configurations
+                  example: 80
+          '401':
+            description: User is not authorized
+            schema:
+              $ref: '#definitions/AuthenticationError'
+          '400':
+            description: Query parameters are not satisfying expected validations
+            schema:
+              $ref: '#definitions/ValidationError'
+    post:
+      summary: Creates a new employee
+      tags: 
+        - Employee
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: user schema to create.
+          required: true
+          schema:
+            $ref: '#definitions/EmployeeSchema'
+      responses: 
+          '201':
+            description: Employee is created successfully
+            schema:
+              $ref: '#definitions/Employee'
+          '401':
+            description: User is not authorized
+            schema:
+              $ref: '#definitions/AuthenticationError'
+          '400':
+            description: Query parameters are not satisfying expected validations
+            schema:
+              $ref: '#definitions/ValidationError'
+  
+  /employee/{id}:
+    put:
+      summary: Edit employee information with provides employee id
+      tags: 
+        - Employee
+      consumes:
+        - application/json
+      parameters:
+        - in: body
+          name: user
+          description: user to create.
+          required: true
+          schema:
+            $ref: '#definitions/EmployeeSchema'
+      responses: 
+          '200':
+            description: Employee is edited successfully
+            schema:
+              $ref: '#definitions/Employee'
+          '401':
+            description: User is not authorized
+            schema:
+              $ref: '#definitions/AuthenticationError'
+          '400':
+            description: Query parameters are not satisfying expected validations
+            schema:
+              $ref: '#definitions/ValidationError'
+    delete:
+      summary: Delete employee with given employee id
+      tags: 
+        - Employee
+      responses: 
+          '200':
+            description: Employee is deleted successfully
+            schema:
+              type: object
+              properties:
+                success:
+                  type: boolean
+                  example: true
+                message:
+                  type: string
+                  example: "Successfully deleted employee"
+          '401':
+            description: User is not authorized
+            schema:
+              $ref: '#definitions/AuthenticationError'
+
+definitions:
+  EmployeeSchema:
+    type: object
+    properties:
+      name:
+        type: string
+        example: James Stroff
+      jobTitle:
+        type: string
+        example: Lead Software Developer
+      department:
+        type: string
+        enum: ['Developer', 'Designer', 'Tester', 'Manager']
+      location:
+        type: string
+        enum: ['Hyderabad', 'Delhi', 'Bangalore', 'Pune', 'Mumbai']
+      age:
+        type: integer
+        example: 24
+      salary:
+        type: string
+        example: 1500000
+  Employee:
+    properties:
+      id: 
+        type: integer
+        uniqueItems: true
+        example: 1
+      name:
+        type: string
+        example: James Stroff
+      jobTitle:
+        type: string
+        example: Lead Software Developer
+      department:
+        type: string
+        enum: ['Developer', 'Designer', 'Tester', 'Manager']
+      location:
+        type: string
+        enum: ['Hyderabad', 'Delhi', 'Bangalore', 'Pune', 'Mumbai']
+      age:
+        type: integer
+        example: 24
+      salary:
+        type: string
+        example: 1500000
+  EmployeeList:
+    type: array
+    items: 
+      $ref: '#definitions/Employee'
+  AuthenticationError:
+    type: object
+    properties:
+      message: 
+        type: string
+        example: Access token is missing or invalid
+      errors: 
+        type: object
+        properties:
+          status:
+            type: integer
+            example: 401
+          message: 
+            type: string
+            example: Access token is missing or invalid
+  ValidationError:
+    type: object
+    properties: 
+      message: 
+        type: string
+        example: "Validation Failed"
+      name:
+        type: string
+        example: "ValidationError"
+      
+
